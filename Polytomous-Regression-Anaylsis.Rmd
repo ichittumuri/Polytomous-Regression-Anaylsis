@@ -1,0 +1,560 @@
+---
+title: "Homework Assignment 4"
+author: "Isabella Chittumuri "
+date: "05/24/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("~/Documents/Hunter College/Spring 2021/Stat 707/HW")
+library(tidyverse)
+library(ggplot2)
+```
+
+
+
+# 14.4
+
+# a. 
+Plot the logistic mean response function (14.16) when $\beta_0 = -25$ and $\beta_1 = .2$.
+
+$$
+\begin{aligned}
+E[Y_i] &= \pi_i = F_L(\beta_0 + \beta_1X_i)\\
+&= \frac{exp(-25 + 0.2X_1)}{1+ exp(-25 + 0.2X_1)}\\
+&= [1 + exp(25 - 0.2X_i)]^{-1}
+\end{aligned}
+$$
+
+```{r}
+logmean <- function(x, beta0, beta1) 1/(1+exp(-beta0-beta1*x))
+logmeanseq <- function(beta0, beta1, l, u) 1/(1+exp(-beta0-beta1*seq(l,u,0.1)))
+```
+
+```{r}
+plot(seq(90,170,0.1), logmeanseq(-25,0.2,90,170), type="l", xlab="X", ylab="P")
+```
+
+# b. 
+For what value of X is the mean response equal to .5?
+
+$$
+\begin{aligned}
+0.5 &= [1 + exp(25 - 0.2X_i)]^{-1}\\
+& 0.5[1+ exp(25 - 0.2X_i)] = 1\\
+& [1+ exp(25 - 0.2X_i)] = 2 \\
+& exp(25 - 0.2X_i) = 1 \\
+& ln(exp(25 - 0.2X_i)) = ln(1) \\\
+& 25-0.2X_i = 0\\
+& -0.2X_i = -25 \\
+& X_i = 125
+\end{aligned}
+$$
+
+# c. 
+Find the odds when X = 150, when X = 151, and the ratio of the odds when X = 151 to the odds when X = 150. Is this odds ratio equal to exp($\beta_1$) as it should be?
+
+$$
+\begin{aligned}
+When \space X =150: \\
+\pi_i &= [1 + exp(25 - 0.2(150))]^{-1} \\
+&= 0.993307149
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+Odds_1 &= \frac{\pi_i}{1-\pi_i}\\
+&= \frac{0.993307149}{1-0.993307149} \\
+&= 148.41316
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+When \space X =151: \\
+\pi_i &= [1 + exp(25 - 0.2(151))]^{-1} \\
+&= 0.994513701
+\end{aligned}
+$$
+$$
+\begin{aligned}
+Odds_2 &= \frac{\pi_i}{1-\pi_i}\\
+&= \frac{0.994513701}{1-0.994513701} \\
+&= 181.27224
+\end{aligned}
+$$
+$$
+\begin{aligned}
+Odds \space ratio &= \frac{odds_2}{odds_1}\\
+&= \frac{181.27224}{148.41316} \\
+&= 1.2214 = exp(.2)\\
+&=exp(\beta_1)
+\end{aligned}
+$$
+
+Yes, this odds ratio equal is to exp($\beta_1$).
+
+# 14.9
+Performance ability. A psychologist conducted a study to examine the nature of the relation if any, between an employee's emotional stability (X) and the employee's ability to perform: in a task group (Y). Emotional stability was measured by a written test for which the higher the score, the greater is the emotional stability. Ability to perform in a task group (Y = 1 if able, Y = 0 if unable) was evaluated by the supervisor. The results for 27 employees were:
+
+```{r}
+perform <- read.csv("Problem_9_Data.csv", header = F)
+names(perform) <- c("y", "x")
+perform
+```
+
+Logistic regression model (14.20) is assumed to be appropriate.
+
+# a
+Find the maximum likelihood estimates of $\beta_0$ and $\beta_1$. State the fitted response function.
+
+```{r}
+mod <- glm(y ~ x, data = perform, family = "binomial")
+summary((mod))
+```
+
+$\beta_0 = 10.3089$
+$\beta_1 = 0.01892X$
+
+Fitted response function:
+
+$$
+\begin{aligned}
+\hat{\pi_i} &= \frac{exp(- 10.3089 + 0.01892X)}{1+ exp(-10.3089 + 0.01892X)}\\
+&= [1 + exp(10.3089 - 0.01892X)]^{-1}
+\end{aligned}
+$$
+
+# b. 
+Obtain a scatter plot of the data with both the fitted logistic response function from part (a) and a lowess smooth superimposed. Does the fitted logistic response function appear to fit well?
+
+```{r}
+# Plot Logistic Regression and Lowess Fit
+xx <- with(perform, seq(min(x), max(x), len = 200))
+plot(y ~ x, perform, pch = 19, col = "gray", xlab = "Emotional Stablitiy (X)", ylab = "Fitted Value")
+lines(xx, predict(mod, data.frame(x = xx), type = "resp"), lwd = 2)
+title("Logistic Mean Response and Lowess Functions")
+x <- perform$x
+y <- perform$y
+lines(lowess(x,y), lty = 2, col="blue")
+legend("right", c( "Logistic Response", "Lowess Smooth"), fill=c("black", "blue"))
+```
+
+Yes, the fitted logistic response function appears to fit the data well since it is relatively close to the lowess smooth superimposed function.
+
+# c. 
+Obtain $exp(\beta_1)$ and interpret this number.
+
+$$
+exp(\beta_1) = exp(0.01892) = 1.0191
+$$
+
+1.0191 - 1 = 0.0191
+
+When subtracted by 1, the $exp(\beta_1)$ is the odds ratio related to a unit one increase in emotional stability. This means that for every one unit increase in emotional stability, the odds of a person being capable of performing in a task group increases by 1.9%
+
+# d. 
+What is the estimated probability that employees with an emotional stability test score of 550 will be able to perform in a task group?
+
+$$
+\begin{aligned}
+\hat{\pi_i} 
+&= [1 + exp(10.3089 - 0.01892(550))]^{-1} \\
+&= 0.5243
+\end{aligned}
+$$
+# e. 
+Estimate the emotional stability test score for which 70 percent of the employees with this test score are expected to be able to perform in a task group.
+
+$$
+\begin{aligned}
+0.7 &= [1 + exp(10.3089 - 0.01892X)]^{-1}\\
+& 0.7[1 + exp(10.3089 - 0.01892X)] = 1\\
+& 1+ exp(10.3089 - 0.01892X)] = 1.42857 \\
+& exp(10.3089- 0.01892X)) = 0.42857 \\
+& ln(exp(10.3089- 0.01892X)) = ln(0.42857) \\\
+& 10.3089- 0.01892X = -0.8473\\
+& -0.01892X = -11.15638\\
+& X = 589.65
+\end{aligned}
+$$
+
+# 14.16
+Refer to Performance ability Problem 14.9. Assume that the fitted model is appropriate and that large-sample inferences are applicable.
+
+# a
+Obtain an approximate 95 percent confidence interval for $exp(\beta_1)$. Interpret your interval.
+
+```{r}
+summary(mod)
+```
+
+$\beta_1 = 0.018920$
+$s{\beta_1}=0.007877$
+$z(0.95)=1.96$
+
+$$
+\begin{aligned}
+CI &= exp[0.01892 \pm 1.96(0.007877)] \\
+&= (1.0035, 1.0350)
+\end{aligned}
+$$
+
+If we repeat the experiment, we expect, on average, that 95% of the Confidence Interval (CI) contains the true value of the odds of $\beta_1$. The lower CI limit is 1.0035, while the upper CI limit is 1.0350. This interval is very close in range to the calculated odds, which was 1.0191.
+
+# b
+Conduct a Wald test to determine whether employee's emotional stability (X) is related to the probability that the employee will be able to perform in a task group: use $\alpha = .05$. State the alternatives. decision rule, and conclusion. What is the approximate P-value of the test?
+
+Alternatives:
+- $H_0:\beta_1 = 0$
+- $H_a:\beta_1 \ne 0$
+
+Decision Rule:
+For $\alpha = .05$, we require z(.975) = 1.960
+
+$$
+\begin{aligned}
+& z^* \leq 1.960, fail\space to\space reject\space H_0 \\
+& z^* > 1.960, reject\space H_0
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+z^* &= \frac{\beta_1}{s{\beta_1}} \\
+&= \frac{0.018920}{0.007877} \\
+&= 2.402
+\end{aligned}
+$$
+
+Conclusion:
+
+$$
+\begin{aligned}
+& 2.402 > 1.960, reject\space H_0
+\end{aligned}
+$$
+
+Since we reject $H_0$, $\beta_1$ should be included in the final model.
+
+```{r}
+# to get p-value
+summary(mod, Wald=TRUE)
+```
+
+The approximate P-value of the Wald test is 0.0163. 
+
+# c. 
+Conduct a likelihood ratio test to determine whether employee's emotional stability (X) is related to the probability that the employee will be able to perform in a task group; use $\alpha = .05$. State the full and reduced models, decision rule, and conclusion. What is the approximate P-value of the test? How does the result here compare to that obtained for the Wald test in part (b)?
+
+Alternatives:
+- $H_0:\beta_1 = 0$
+- $H_a:\beta_1 \ne 0$
+
+General Decision Rule:
+$$
+\begin{aligned}
+& G^2 \leq \chi^2(1-\alpha; p-q), fail\space to\space reject\space H_0 \\
+& G^2 > \chi^2(1-\alpha; p-q),, reject\space H_0
+\end{aligned}
+$$
+
+```{r}
+f <- glm(y ~ x, data = perform, family = "binomial")
+summary(f)
+r <- glm(y ~ 1, data = perform, family = "binomial")
+summary(r)
+```
+
+Full model: $Y = 10.308925 + 0.018920x$
+Reduced model: $Y = 0.07411$
+
+```{r}
+# Likelihood
+logLik(f)
+logLik(r)
+```
+
+Likelihood ratio ($G^2$):
+= $-2lnL_R - (-2lnL_F)$
+= $(-2*-18.69645) - (-2*-14.62087)$
+= $37.3929-29.24174 = 8.15116$
+
+```{r}
+# alpha = .05
+qchisq(0.95,1)
+```
+
+Conclusion: 
+$$
+8.15116 > 3.841459, reject\space H_0
+$$
+
+Since we reject $H_0$, the full model that includes $\beta_1$ is the better model.
+
+```{r}
+# to get p-value
+anova(r,f, test="LRT")
+```
+
+The approximate P-value of the likelihood ratio test is 0.004303. 
+
+The results from the likelihood ratio test and the Wald test in part (b) is the same, $\beta_1$ should be included in our final model. 
+
+# 14.40
+Show the equivalence of (14.16) and (14.17).
+
+$$
+\begin{aligned}
+(14.16) = E[Y_i] &= \frac{exp(\beta_0 + \beta_1X_i)}{1+ exp(\beta_0 + \beta_1X_i)}\\
+&= \frac{exp(\beta_0 + \beta_1X_i)}{1+ exp(\beta_0 + \beta_1X_i)} * \frac{exp(-\beta_0 - \beta_1X_i)}{exp(-\beta_0 - \beta_1X_i)}\\
+&= \frac{1}{exp(-\beta_0 - \beta_1X_i) + 1 } \\
+&= [1 + exp(-\beta_0 - \beta_1X_i)]^{-1} = (14.17)
+&\\
+&& //Q.E.D.
+\end{aligned}
+$$
+
+# 14.42
+Derive (l4.18a). using (14.16) and (14.18).
+
+$$
+\begin{aligned}
+& (14.16) = E[Y_i] = \pi_i = F_L(\beta_0 + \beta_1X_i) = \frac{exp(\beta_0 + \beta_1X_i)}{1+ exp(\beta_0 + \beta_1X_i)}\\
+& (14.18) = F^{-1}_L(\pi_i) = \beta_0 + \beta_1X_i = \pi'_i
+\end{aligned}
+$$
+
+$$
+\pi_i = \frac{exp(\pi'_i)}{1 + exp(\pi'_i)}
+$$
+
+$$
+\begin{aligned}
+1-\pi_i &= 1 - \frac{exp(\pi'_i)}{1+exp(\pi'_i)} \\
+& = \frac{1+exp(\pi'_i)}{1+exp(\pi'_i)} - \frac{exp(\pi'_i)}{1+exp(\pi'_i)} \\
+& = \frac{1+exp(\pi'_i) - exp(\pi'_i)}{1+exp(\pi'_i)} \\
+& = [1+exp(\pi'_i)]^{-1} \\
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+1-\pi_i &= 1 - \frac{exp(\pi'_i)}{1+exp(\pi'_i)} \\
+& = \frac{1+exp(\pi'_i)}{1+exp(\pi'_i)} - \frac{exp(\pi'_i)}{1+exp(\pi'_i)} \\
+& = \frac{1+exp(\pi'_i) - exp(\pi'_i)}{1+exp(\pi'_i)} \\
+& = [1+exp(\pi'_i)]^{-1} \\
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\frac{\pi'_i}{1-\pi'_i} &= \frac{exp(\pi'_i)}{1+exp(\pi'_i)} \div \frac{1}{1+exp(\pi'_i)} \\
+& = exp(\pi'_i)
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+ln(\frac{\pi'_i}{1-\pi'_i}) &= ln(exp(\pi'_i)\\
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\pi'_i = ln(\frac{\pi'_i}{1-\pi'_i})
+\end{aligned}
+$$
+
+From 14.18 $F_{L}^{-1}(\pi_{i})=\pi'_{i}$
+
+Therefore,
+$$
+F_{L}^{-1}(\pi_{i})=log(\frac{\pi_{i}}{1-\pi_{i}})
+$$
+
+# 14.58
+Refer to the CDI data set in Appendix C.2. Region is the nominal! level response variable coded 1 = NE. 2 = NC. 3 = S. and 4 = W. The pool of potential predictor variables includes population density (total population/land area), percent of population aged 18-34, percent of population aged 65 or older, serious crimes per capital (total serious crimes/total population), percent high school graduates, percent bachelor's degree, percent below poverty level, percent unemployment, and per capital income. The even-numbered cases are to be used in developing the polytomous logistic regression model.
+
+```{r}
+CDI <- read.csv("CDI_Data.csv", header = F)
+
+names(CDI) <- c("ID", "county", "state", "land_area", "total_pop", "precent_pop_18_34", "percent_pop_65", "num_physicians", "n_hospital_beds", "total_crimes", "percent_hs_grads", "percent_bach", "percent_pov", "percent_unemploy", "per_capita_income", "total_income", "geographic_region")
+
+# ID number of even cases
+even_cases <- CDI[!c(TRUE,FALSE),]
+```
+
+# a. 
+For polytomous regression model (14.99) using response variable region with 1=NE as the referent category. Which predictors appear to be most important? Interpret the  results.
+
+```{r}
+# corresponding labels
+even_cases <- even_cases %>% 
+  mutate(geographic_region2 = case_when(geographic_region == 1 ~ "NE",
+                                        geographic_region == 2 ~ "NC",
+                                        geographic_region == 3 ~ "S",
+                                        TRUE ~ "W"))
+```
+
+```{r}
+# make NE=1 as referent category
+even_cases <- even_cases %>% 
+  mutate(geographic_region2 = fct_relevel(geographic_region2, "NE", "NC", "S", "W"))
+```
+
+```{r}
+# create population density = total population divided by land area
+even_cases$pop_density <- even_cases$total_pop/even_cases$land_area
+
+# create crimes per capita = total population divided by land area
+even_cases$crimes_per_capita <- even_cases$total_crimes/even_cases$total_pop
+```
+
+```{r}
+# polytomous regression model
+library(nnet)
+pmod <- multinom(geographic_region2 ~ pop_density + precent_pop_18_34 + percent_pop_65 + crimes_per_capita + percent_hs_grads + percent_bach + percent_pov + percent_unemploy + per_capita_income, data = even_cases)
+# gives the beta coefficients for NC, S, and W
+summary(pmod)
+```
+
+General Decision Rule:
+$$
+\begin{aligned}
+& G^2 \leq \chi^2(1-\alpha; p-q), fail\space to\space reject\space H_0 \\
+& G^2 > \chi^2(1-\alpha; p-q),, reject\space H_0
+\end{aligned}
+$$
+
+```{r}
+library(car)
+# for significance of predictors
+Anova(pmod)
+```
+
+From the Anova test, the predictors that highly significant are: population density, percent of population aged 18-34, serious crimes per capital, percent high school graduates, percent unemployment, per capital income And the predictor with minor significance is percent below poverty. This means that those predictors have the most influence on outcome of the response variable geographic region with 1=NE as the referent category. 
+
+# b. 
+Conduct a series of likelihood ratio tests to determine which predictors. If any, can be dropped from the nominal logistic regression model. Control $\alpha$ at .O1 for each test. State the alternatives. decision rules. and conclusions.
+
+Alternatives for each test: 
+- $H_0:\beta_1 = \beta_2 = ...=\beta_9 = 0$
+- $H_a: \beta_1 \ne \beta_2\ne... = \beta_9 \ne 0$
+
+General Decision Rule:
+$$
+\begin{aligned}
+& G^2 \leq \chi^2(1-\alpha; p-q), fail\space to\space reject\space H_0 \\
+& G^2 > \chi^2(1-\alpha; p-q),, reject\space H_0
+\end{aligned}
+$$
+
+```{r}
+Anova(pmod, test="LRT")
+```
+
+```{r}
+qchisq(0.99,1)
+```
+
+Conclusion: 
+Based on the likelihood ratio test, we can see that only $G^2$ for percent population 65 or older is $\le$ 6.634897. This means that we fail to reject $H_O$ for percent population 65 or older and reject $H_O$ for all other variables. In other words, we do not include variable percent population 65 or older in the final model 
+
+# c. 
+For the fun model in part (a). carry out separate binary logistic regressions for each of the three comparisons with the referent category, as described at the top of page 612. How do the slope coefficients compare to those obtained in part (a).
+
+### Comparison 1
+
+```{r}
+# only call NE and NC
+c1 <- even_cases %>% 
+  filter(geographic_region2 == "NE" | geographic_region2 == "NC")
+
+# NC(0) and NE(1)
+c1 <- c1 %>% 
+  mutate(geographic_region2 = fct_relevel(geographic_region2, "NC", "NE"))
+
+# fit binary logistic regression model
+c1_fit <- glm(geographic_region2 ~ pop_density + precent_pop_18_34 + percent_pop_65 + crimes_per_capita + percent_hs_grads + percent_bach + percent_pov + percent_unemploy + per_capita_income, family = binomial(link = "logit"), data = c1)
+
+# Summary 
+c1_summary <- summary(c1_fit)
+
+# coefficients of model
+c1_coeff <- c1_summary$coefficients[,1]; c1_coeff
+```
+
+### Comparison 2
+
+```{r}
+# only call NE and S
+c2 <- even_cases %>% 
+  filter(geographic_region2 == "NE" | geographic_region2 == "S")
+
+# S(0) and NE(1) 
+c2 <- c2 %>% 
+  mutate(geographic_region2 = fct_relevel(geographic_region2, "S", "NE"))
+
+# fit binary logistic regression model
+c2_fit <- glm(geographic_region2 ~ pop_density + precent_pop_18_34 + percent_pop_65 + crimes_per_capita + percent_hs_grads + percent_bach + percent_pov + percent_unemploy + per_capita_income, family = binomial(link = "logit"), data = c2)
+
+# Summary 
+c2_summary <- summary(c2_fit)
+
+# coefficients of model
+c2_coeff <- c2_summary$coefficients[,1]; c2_coeff
+```
+
+### Comparison 3
+
+```{r}
+# only call NE and W
+c3 <- even_cases %>% 
+  filter(geographic_region2 == "NE" | geographic_region2 == "W")
+
+# W(0) and NE(1) 
+c3 <- c3 %>% 
+  mutate(geographic_region2 = fct_relevel(geographic_region2, "W", "NE"))
+
+# fit binary logistic regression model
+c3_fit <- glm(geographic_region2 ~ pop_density + precent_pop_18_34 + percent_pop_65 + crimes_per_capita + percent_hs_grads + percent_bach + percent_pov + percent_unemploy + per_capita_income, family = binomial(link = "logit"), data = c3)
+
+# Summary 
+c3_summary <- summary(c3_fit)
+
+# coefficients of model
+c3_coeff <- c3_summary$coefficients[,1]; c3_coeff
+```
+
+The slope coefficients for each of the comparisons are different from those obtained in part (a). This is because in part (a) we had a polytomous regression model with four categories, whereas in part (c) we had three separate binary logistic regression models. 
+
+# d. 
+For each of the separate binary logistic regressions carried out in part (C). Obtain the deviance residuals and plot them against the estimated probabilities with a lowess smooth superimposed. What do the plots suggest about the adequacy of the fit of the binary logistic regression models?
+
+```{r}
+res_dev1 <- residuals(c1_fit, "deviance")
+plot(c1_fit$fitted.values, res_dev1, xlab="Estimated Probability", ylab="Deviance Residuals", main="Logistic Regression where NE(1) and NC(0)")
+lines(lowess(c1_fit$fitted.values, res_dev1), col="blue")
+```
+
+```{r}
+res_dev2 <- residuals(c2_fit, "deviance")
+plot(c2_fit$fitted.values, res_dev2, xlab="Estimated Probability", ylab="Deviance Residuals", main="Logistic Regression where NE(1) and S(0)")
+lines(lowess(c2_fit$fitted.values, res_dev2), col="blue")
+```
+
+```{r}
+res_dev3 <- residuals(c3_fit, "deviance")
+
+plot(c3_fit$fitted.values, res_dev3, xlab="Estimated Probability", ylab="Deviance Residuals", main="Logistic Regression where NE(1) and W(0)")
+lines(lowess(c3_fit$fitted.values, res_dev3), col="blue")
+```
+
+The circles in the plots represent the deviance residuals of each binary logistic regression. All three plots suggest have a relatively straight lowess smooth line which suggests a good fit of the binary logistic regressions.
+
